@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
+import torch.version
 from tqdm import tqdm
 
 
@@ -11,15 +12,45 @@ class PolicyNet(torch.nn.Module):
         super(PolicyNet, self).__init__()
 
         self.net = torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels=3,out_channels=1,kernel_size=3,stride=4),
+            torch.nn.Conv2d(in_channels=3,out_channels=64,kernel_size=(3,3),stride=(1,1),padding=(1,1)),
+            torch.nn.BatchNorm2d(64,eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(in_channels=1,out_channels=1,kernel_size=3,stride=4),
+            torch.nn.Conv2d(in_channels=64,out_channels=64,kernel_size=(3,3),stride=(1,1),padding=(1,1)),
+            torch.nn.BatchNorm2d(64,eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
             torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+
+            torch.nn.Conv2d(in_channels=64,out_channels=32,kernel_size=(3,3),stride=(1,1),padding=(1,1)),
+            torch.nn.BatchNorm2d(32,eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+
+            torch.nn.Conv2d(in_channels=32,out_channels=16,kernel_size=(3,3),stride=(1,1),padding=(1,1)),
+            torch.nn.BatchNorm2d(16,eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+
+            torch.nn.Conv2d(in_channels=16,out_channels=8,kernel_size=(3,3),stride=(1,1),padding=(1,1)),
+            torch.nn.BatchNorm2d(8,eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+
+            torch.nn.Conv2d(in_channels=8,out_channels=4,kernel_size=(3,3),stride=(1,1),padding=(1,1)),
+            torch.nn.BatchNorm2d(4,eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+            
+            torch.nn.Conv2d(in_channels=4,out_channels=2,kernel_size=(3,3),stride=(1,1),padding=(1,1)),
+            torch.nn.BatchNorm2d(2,eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+
             torch.nn.Flatten(),
-            torch.nn.Linear(in_features=130,out_features=64),
-            torch.nn.Sigmoid(),
-            torch.nn.Linear(in_features=64,out_features=action_dim),
-            torch.nn.Sigmoid()  
+            
+            torch.nn.Linear(in_features=12,out_features=action_dim),
+            #torch.nn.ReLU(),
+            #torch.nn.Linear(in_features=32,out_features=action_dim),
+            #torch.nn.ReLU()  
         )
 
     def forward(self, x):
@@ -27,7 +58,7 @@ class PolicyNet(torch.nn.Module):
         x = self.net(x)
         return F.softmax(x, dim=1)
     
-class REINFORCE:
+class REINFORCE:#
     def __init__(self, state_dim, hidden_dim, action_dim, learning_rate, gamma,
                  device):
         self.policy_net = PolicyNet(state_dim, hidden_dim,
